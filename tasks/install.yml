@@ -1,0 +1,168 @@
+---
+- name: yum install nginx
+  yum:
+    name: nginx
+    state: present
+    update_cache: yes
+    use_backend: yum
+  become: yes
+  when: VAR_Nginx_yumInstall == True
+
+- name: package install nginx
+  block:
+    - name: set VAR_Nginx_package_dst
+      file:
+        path: "{{ VAR_Nginx_package_dst }}"
+        state: directory
+        mode: '0777'
+      become: yes
+
+    - name: VAR_Nginx_package_src is none
+      block:
+        - name: copy VAR_Nginx_rpmList from files
+          copy:
+            src: "{{ item }}"
+            dest: "{{ VAR_Nginx_package_dst }}"
+          with_items: "{{ VAR_Nginx_rpmList }}"
+
+        - name: copy VAR_Nginx_pkgList from files
+          unarchive:
+            src: "{{ item }}"
+            dest: "{{ VAR_Nginx_package_dst }}"
+          with_items: "{{ VAR_Nginx_pkgList }}"
+
+        - name: copy VAR_Nginx_nginxPkg from files
+          unarchive:
+            src: "{{ VAR_Nginx_nginxPkg }}"
+            dest: "{{ VAR_Nginx_package_dst }}"
+      when: VAR_Nginx_package_src is none
+
+    - name: VAR_Nginx_package_src is not none
+      block:
+        - name: copy VAR_Nginx_rpmList from src
+          copy:
+            src: "{{ VAR_Nginx_package_src }}/{{ item }}"
+            dest: "{{ VAR_Nginx_package_dst }}"
+          with_items: "{{ VAR_Nginx_rpmList }}"
+
+        - name: copy VAR_Nginx_pkgList from src
+          unarchive:
+            src: "{{ VAR_Nginx_package_src }}/{{ item }}"
+            dest: "{{ VAR_Nginx_package_dst }}"
+          with_items: "{{ VAR_Nginx_pkgList }}"
+
+        - name: copy VAR_Nginx_nginxPkg from src
+          unarchive:
+            src: "{{ VAR_Nginx_package_src }}/{{ VAR_Nginx_nginxPkg }}"
+            dest: "{{ VAR_Nginx_package_dst }}"
+      when: VAR_Nginx_package_src is not none
+
+    - name: add group
+      group:
+        name: "{{ VAR_Nginx_nginxGroup }}"
+      become: yes
+      when: VAR_Nginx_nginxGroup is defined
+
+    - name: add user to group
+      user:
+        name: "{{ VAR_Nginx_nginxUser }}"
+        group: "{{ VAR_Nginx_nginxGroup | default(omit) }}"
+      become: yes
+      when: VAR_Nginx_nginxUser is defined
+
+    - name: install VAR_Nginx_rpmList
+      yum:
+        name: "{{ VAR_Nginx_package_dst }}/{{ item }}"
+        use_backend: yum
+        state: present
+      become: yes
+      with_items: "{{ VAR_Nginx_rpmList }}"
+
+    - name: install VAR_Nginx_pkgList
+      shell: "./configure;make;make install"
+      args:
+        chdir: "{{ VAR_Nginx_package_dst }}/{{ item | replace('.tar.gz','') }}/"
+      become: yes
+      with_items: "{{ VAR_Nginx_pkgList }}"
+
+    - name: VAR_Nginx_nginxInstallPath is defined
+      block:
+        - name: VAR_Nginx_nginxUser is defined
+          block:
+            - name: VAR_Nginx_nginxGroup is defined
+              shell: "./configure --prefix={{ VAR_Nginx_nginxInstallPath }} --user={{ VAR_Nginx_nginxUser }} --group={{ VAR_Nginx_nginxGroup }};make && make install"
+              args:
+                chdir: "{{ VAR_Nginx_package_dst }}/{{ VAR_Nginx_nginxPkg | replace('.tar.gz','') }}"
+              become: yes
+              when: VAR_Nginx_nginxGroup is defined
+
+            - name: VAR_Nginx_nginxGroup is undefined
+              shell: "./configure --prefix={{ VAR_Nginx_nginxInstallPath }} --user={{ VAR_Nginx_nginxUser }};make && make install"
+              args:
+                chdir: "{{ VAR_Nginx_package_dst }}/{{ VAR_Nginx_nginxPkg | replace('.tar.gz','') }}"
+              become: yes
+              when: VAR_Nginx_nginxGroup is undefined
+          when: VAR_Nginx_nginxUser is defined
+
+        - name: VAR_Nginx_nginxUser is undefined
+          block:
+            - name: VAR_Nginx_nginxGroup is defined
+              shell: "./configure --prefix={{ VAR_Nginx_nginxInstallPath }} --group={{ VAR_Nginx_nginxGroup }};make && make install"
+              args:
+                chdir: "{{ VAR_Nginx_package_dst }}/{{ VAR_Nginx_nginxPkg | replace('.tar.gz','') }}"
+              become: yes
+              when: VAR_Nginx_nginxGroup is defined
+
+            - name: VAR_Nginx_nginxGroup is undefined
+              shell: "./configure --prefix={{ VAR_Nginx_nginxInstallPath }};make && make install"
+              args:
+                chdir: "{{ VAR_Nginx_package_dst }}/{{ VAR_Nginx_nginxPkg | replace('.tar.gz','') }}"
+              become: yes
+              when: VAR_Nginx_nginxGroup is undefined
+          when: VAR_Nginx_nginxUser is undefined
+      when: VAR_Nginx_nginxInstallPath is defined
+
+    - name: VAR_Nginx_nginxInstallPath  is undefined
+      block:
+        - name: VAR_Nginx_nginxUser is defined
+          block:
+            - name: VAR_Nginx_nginxGroup is defined
+              shell: "./configure --user={{ VAR_Nginx_nginxUser }} --group={{ VAR_Nginx_nginxGroup }};make && make install"
+              args:
+                chdir: "{{ VAR_Nginx_package_dst }}/{{ VAR_Nginx_nginxPkg | replace('.tar.gz','') }}"
+              become: yes
+              when: VAR_Nginx_nginxGroup is defined
+
+            - name: VAR_Nginx_nginxGroup is undefined
+              shell: "./configure --user={{ VAR_Nginx_nginxUser }};make && make install"
+              args:
+                chdir: "{{ VAR_Nginx_package_dst }}/{{ VAR_Nginx_nginxPkg | replace('.tar.gz','') }}"
+              become: yes
+              when: VAR_Nginx_nginxGroup is undefined
+          when: VAR_Nginx_nginxUser is defined
+
+        - name: VAR_Nginx_nginxUser is undefined
+          block:
+            - name: VAR_Nginx_nginxGroup is defined
+              shell: "./configure --group={{ VAR_Nginx_nginxGroup }};make && make install"
+              args:
+                chdir: "{{ VAR_Nginx_package_dst }}/{{ VAR_Nginx_nginxPkg | replace('.tar.gz','') }}"
+              become: yes
+              when: VAR_Nginx_nginxGroup is defined
+
+            - name: VAR_Nginx_nginxGroup is undefined
+              shell: "./configure;make && make install"
+              args:
+                chdir: "{{ VAR_Nginx_package_dst }}/{{ VAR_Nginx_nginxPkg | replace('.tar.gz','') }}"
+              become: yes
+              when: VAR_Nginx_nginxGroup is undefined
+          when: VAR_Nginx_nginxUser is undefined
+      when: VAR_Nginx_nginxInstallPath is undefined
+
+    # - name: has user to install nginx
+      # shell: "./configure --prefix={{ VAR_Nginx_nginxInstallPath | default(omit) }} --user={{ VAR_Nginx_nginxUser | default(omit) }} --group={{ VAR_Nginx_nginxGroup | default(omit) }};make && make install"
+      # args:
+        # chdir: "{{ VAR_Nginx_package_dst }}/{{ VAR_Nginx_nginxPkg | replace('.tar.gz','') }}"
+      # become: yes
+
+  when: VAR_Nginx_yumInstall == False

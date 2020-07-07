@@ -1,0 +1,51 @@
+---
+- name: check VAR_Nginx_yumInstall
+  fail:
+    msg: "The variable VAR_Nginx_yumInstall must be bool."
+  when:
+    - VAR_Nginx_yumInstall != True
+    - VAR_Nginx_yumInstall != False
+
+- name: check package param
+  block:
+    - name: check param VAR_Nginx_package_dst
+      fail:
+        msg: "The variable VAR_Nginx_package_dst cannot be NULL."
+      when: VAR_Nginx_package_dst is none
+
+    - name: check param VAR_Nginx_rpmList
+      fail:
+        msg: "The variable VAR_Nginx_rpmList cannot be NULL."
+      when: VAR_Nginx_rpmList is none
+
+    - name: check param VAR_Nginx_pkgList
+      fail:
+        msg: "The variable VAR_Nginx_pkgList cannot be NULL."
+      when: VAR_Nginx_pkgList is none
+
+    - name: check param VAR_Nginx_nginxPkg
+      fail:
+        msg: "The variable VAR_Nginx_nginxPkg cannot be NULL."
+      when: VAR_Nginx_nginxPkg is none
+
+    - name: check param VAR_Nginx_nginxInstallPath
+      fail:
+        msg: "The variable VAR_Nginx_nginxInstallPath cannot be NULL."
+      when:
+        - VAR_Nginx_nginxInstallPath is defined
+        - VAR_Nginx_nginxInstallPath is none
+
+    - name: check param VAR_Nginx_nginxGroup
+      fail:
+        msg: "The variable VAR_Nginx_nginxGroup cannot be NULL."
+      when:
+        - VAR_Nginx_nginxGroup is defined
+        - VAR_Nginx_nginxGroup is none
+
+    - name: check param VAR_Nginx_nginxUser
+      fail:
+        msg: "The variable VAR_Nginx_nginxUser cannot be NULL."
+      when:
+        - VAR_Nginx_nginxUser is defined
+        - VAR_Nginx_nginxUser is none
+  when: VAR_Nginx_yumInstall == False

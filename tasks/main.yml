@@ -1,0 +1,6 @@
+---
+- name: run param check
+  import_tasks: 'pre_check.yml'
+
+- name: run install
+  import_tasks: 'install.yml'

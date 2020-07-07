@@ -1,0 +1,12 @@
+---
+VAR_Nginx_yumInstall: false
+VAR_Nginx_package_src:
+VAR_Nginx_package_dst: /tmp
+VAR_Nginx_rpmList:
+  - pcre-devel-8.32-17.el7.x86_64.rpm
+VAR_Nginx_pkgList:
+  - zlib-1.2.11.tar.gz
+VAR_Nginx_nginxPkg: nginx-1.16.1.tar.gz
+# VAR_Nginx_nginxInstallPath: /etc/local/nginx
+# VAR_Nginx_nginxGroup: nginx
+# VAR_Nginx_nginxUser: nginx
